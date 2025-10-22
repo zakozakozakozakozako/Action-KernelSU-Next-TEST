@@ -36,6 +36,7 @@ on:
           - oneplus_13s
           - oneplus_pad_2_pro
           - oneplus_pad_3
+          - oneplus_ace5_ultra
       SUSFS_CI:
         type: choice
         description: "下载SUSFS模块调用方式"
@@ -64,7 +65,7 @@ on:
         type: boolean
         description: "是否启用内核层面阻止对关键分区/设备节点的非法写入(LSM)？"
         required: true
-        default: false
+        default: true
       SCHED:
         type: boolean
         description: "是否添加风驰驱动？"
@@ -94,7 +95,7 @@ jobs:
           remove-haskell: 'true'
           remove-codeql: 'true'
 
-      - name: Extract OnePlus Manifest Info
+      - name: Extract Manifest Info
         id: extract_info
         run: |
           set -e
@@ -105,7 +106,7 @@ jobs:
           else
             FILE_CONF="$FILE"
           fi
-          FILE_BASE=$(echo "$FILE_CONF" | sed -E 's/_([a-zA-Z0-9])/\U\1/g; s/^oneplus/OnePlus/')
+          FILE_BASE=$(echo "$FILE_CONF" | sed -E 's/_([a-zA-Z0-9])/\U\1/g; s/^oneplus/OnePlus/; s/^realme/Realme/; s/^oppo/Oppo/')
           mkdir -p ".repo/manifests_fallback"
           XML_PATH=".repo/manifests_fallback/${FILE}.xml"
           README_PATH=".repo/manifests_fallback/README.md"
@@ -113,33 +114,65 @@ jobs:
           echo "FILE_CONF=$FILE_CONF" >> $GITHUB_ENV
           echo "FILE_BASE=$FILE_BASE" >> $GITHUB_ENV
 
-          echo "🌐 拉取 OnePlus Manifest 分支列表..."
-          BRANCHES=$(curl -s https://api.github.com/repos/OnePlusOSS/kernel_manifest/branches | jq -r '.[].name')
+          # 动态调用源码清单仓库,仓库优先级：1️⃣ OnePlusOSS → 2️⃣ Numbersf(可换)
+          declare -A REPOS
+          REPOS["OnePlusOSS"]="https://api.github.com/repos/OnePlusOSS/kernel_manifest"
+          REPOS["Dynamic"]="https://api.github.com/repos/Numbersf/kernel_manifest"
 
-          FOUND=""
-          for BRANCH in $BRANCHES; do
-            XML_URL="https://raw.githubusercontent.com/OnePlusOSS/kernel_manifest/$BRANCH/${FILE}.xml"
-            README_URL="https://raw.githubusercontent.com/OnePlusOSS/kernel_manifest/$BRANCH/README.md"
-            if curl -sf --head "$XML_URL" > /dev/null; then
-              echo "✅ XML: $BRANCH"
-              curl -s -o "$XML_PATH" "$XML_URL"
-              curl -s -o "$README_PATH" "$README_URL"
-              FOUND="$BRANCH"
-              break
+          FOUND_REPO=""
+          FOUND_BRANCH=""
+
+          check_repo() {
+            local OWNER=$1
+            local REPO_URL=$2
+
+            echo "🌐 尝试拉取 ${OWNER} 分支列表..."
+            BRANCHES=$(curl -s ${REPO_URL}/branches | jq -r '.[].name' || true)
+            if [[ -z "$BRANCHES" ]]; then
+              echo "⚠️ ${OWNER} 分支列表获取失败，跳过。"
+              return 1
             fi
-          done
+            for BRANCH in $BRANCHES; do
+              XML_URL="https://raw.githubusercontent.com/${OWNER}/kernel_manifest/$BRANCH/${FILE}.xml"
+              README_URL="https://raw.githubusercontent.com/${OWNER}/kernel_manifest/$BRANCH/README.md"
+              if curl -sf --head "$XML_URL" > /dev/null; then
+                echo "✅ 在 ${OWNER} 找到 ${FILE}.xml (分支: $BRANCH)"
+                curl -s -o "$XML_PATH" "$XML_URL"
+                curl -s -o "$README_PATH" "$README_URL" || true
+                FOUND_REPO="$OWNER"
+                FOUND_BRANCH="$BRANCH"
+                return 0
+              fi
+            done
+            return 1
+          }
 
-          if [[ -z "$FOUND" || ! -s "$XML_PATH" ]]; then
-            echo "❌ 无法找到 ${FILE}.xml"
+          # 默认仓库寻找文件
+          if check_repo "OnePlusOSS" "${REPOS["OnePlusOSS"]}"; then
+            echo "MANIFEST_REPO=OnePlusOSS" >> $GITHUB_ENV
+            echo "MANIFEST_BRANCH=$FOUND_BRANCH" >> $GITHUB_ENV
+          fi
+
+          # 动态仓库寻找文件
+          if [[ -z "$FOUND_REPO" ]]; then
+            DYNAMIC_URL="${REPOS["Dynamic"]}"
+            DYNAMIC_OWNER=$(echo "$DYNAMIC_URL" | sed -E 's#https://api.github.com/repos/([^/]+)/.*#\1#')
+            if check_repo "$DYNAMIC_OWNER" "$DYNAMIC_URL"; then
+              echo "MANIFEST_REPO=$DYNAMIC_OWNER" >> $GITHUB_ENV
+              echo "MANIFEST_BRANCH=$FOUND_BRANCH" >> $GITHUB_ENV
+            fi
+          fi
+
+          if [[ -z "$FOUND_REPO" || ! -s "$XML_PATH" ]]; then
+            echo "❌ 无法在动态仓库中找到 ${FILE}.xml"
             exit 1
           fi
-          echo "📥 下载完成，开始提取 revision..."
 
           # 解析 revision 字符串
           REVISION=$(grep -oP '<project[^>]+revision="\K[^"]+' "$XML_PATH" | head -n1 || true)
           echo "解析 FILE 获取 CPU 和 ANDROID_VERSION..."
           # 提取 CPU
-          CPU=$(echo "$REVISION" | sed -E 's#^oneplus/([^_]+).*#\1#')
+          CPU=$(echo "$REVISION" | sed -E 's#^(oneplus|realme|oppo)/([^_]+).*#\2#')
           # 提取 ANDROID_VERSION
           ANDROID_VERSION=$(echo "$REVISION" | grep -oP '\d{1,2}\.\d{1,2}(\.\d{1,2})?')
           if [[ -n "$CPU" && -n "$ANDROID_VERSION" ]]; then
@@ -214,42 +247,17 @@ jobs:
           git config --global user.name "Numbersf"
           git config --global user.email "263623064@qq.com"
 
-      - name: Configure APTC
-        run: |
-          APT_CACHE_DIR="$HOME/apt-cache"
-          mkdir -p "$APT_CACHE_DIR"/{archives,lists/partial}
-          echo "Dir::Cache \"$APT_CACHE_DIR\";" | sudo tee /etc/apt/apt.conf.d/90user-cache
-          echo "Dir::Cache::archives \"$APT_CACHE_DIR/archives\";" | sudo tee -a /etc/apt/apt.conf.d/90user-cache
-          echo "Dir::State::lists \"$APT_CACHE_DIR/lists\";" | sudo tee -a /etc/apt/apt.conf.d/90user-cache
-          echo "Acquire::Check-Valid-Until \"false\";" | sudo tee -a /etc/apt/apt.conf.d/90user-cache
-          echo "Acquire::Languages \"none\";" | sudo tee -a /etc/apt/apt.conf.d/90user-cache
-          sudo chown -R $USER:$USER "$APT_CACHE_DIR"
-
-      - name: Set APT Cache
-        uses: actions/cache@v3
-        with:
-          path: ${{ env.HOME }}/apt-cache
-          key: ${{ runner.os }}-apt-${{ hashFiles('.github/workflows/Build KernelSU Next OnePlus.yml') }}
-          restore-keys: |
-            ${{ runner.os }}-apt-
-
-      - name: Install Dependencies
-        run: |
-          sudo rm -f /var/lib/apt/lists/lock /var/lib/dpkg/lock
-          APT_CACHE_DIR="$HOME/apt-cache"
-          mkdir -p "$APT_CACHE_DIR/lists/partial"
-          sudo apt -o Dir::Cache="$APT_CACHE_DIR" update -qq
-          sudo DEBIAN_FRONTEND=noninteractive apt -o Dir::Cache="$APT_CACHE_DIR" install -yq --no-install-recommends \
-            python3 git curl ccache libelf-dev \
-            build-essential flex bison libssl-dev \
-            libncurses-dev liblz4-tool zlib1g-dev \
-            libxml2-utils rsync unzip
+      - name: Install Dependencies + APTC
+        uses: awalsh128/cache-apt-pkgs-action@latest 
+        with: 
+          packages: python3 git curl ccache libelf-dev build-essential flex bison libssl-dev libncurses-dev liblz4-tool zlib1g-dev libxml2-utils rsync unzip gawk
+          execute_install_scripts: true
 
       - name: Restore Ccache
         uses: actions/cache@v3
         with:
           path: ${{ env.CCACHE_DIR }}
-          key: ccache-${{ runner.os }}-${{ github.ref_name }}-${{ github.event.inputs.FILE }}-${{ env.BUILD_METHOD }}-${{ github.event.inputs.FAST_BUILD == 'true' && 'alpha' || 'beta' }}-15
+          key: ccache-${{ runner.os }}-${{ github.ref_name }}-${{ github.event.inputs.FILE }}-${{ env.BUILD_METHOD }}-${{ github.event.inputs.FAST_BUILD == 'true' && 'alpha' || 'beta' }}-16
 
       - name: Initialize Ccache
         run: |
@@ -281,7 +289,17 @@ jobs:
           mkdir -p .repo/manifests
           FILE="${{ github.event.inputs.FILE }}"
           cp "$GITHUB_WORKSPACE/.repo/manifests_fallback/${FILE}.xml" ".repo/manifests/${FILE}.xml"
-          repo init -u https://github.com/OnePlusOSS/kernel_manifest.git -b oneplus/${{env.CPU}} -m "${FILE}.xml" --repo-rev=v2.16 --depth=1 --no-clone-bundle --no-tags
+
+          MANIFEST_REPO="${{ env.MANIFEST_REPO }}"
+          MANIFEST_BRANCH="${{ env.MANIFEST_BRANCH }}"
+          CPU="${{ env.CPU }}"
+          echo "MANIFEST_REPO=$MANIFEST_REPO"
+          echo "MANIFEST_BRANCH=$MANIFEST_BRANCH"
+
+          BASE_URL="https://github.com/${MANIFEST_REPO}/kernel_manifest.git"
+
+          echo "使用 $MANIFEST_REPO 的分支 $MANIFEST_BRANCH 初始化仓库..."
+          repo init -u "$BASE_URL" -b "$MANIFEST_BRANCH" -m "${FILE}.xml" --repo-rev=v2.16 --depth=1 --no-clone-bundle --no-tags
           repo sync -c -j$(nproc) --no-clone-bundle --no-tags --force-sync
 
           for dir in kernel_platform/common kernel_platform/msm-kernel; do
@@ -474,12 +492,50 @@ jobs:
               sed -i '/#include <trace\/hooks\/fs.h>/d' 50_add_susfs_in_gki-${{ env.KANDROID_VERSION }}-${KERNEL_VERSION}.patch
             fi
           fi
+          # Fake Patch to fix failures
+          fake_patched=0
+          if [ "$GKI_V" = "android15-6.6" ]; then
+            if ! grep -qxF $'\tunsigned int nr_subpages = __PAGE_SIZE / PAGE_SIZE;' ./fs/proc/task_mmu.c; then
+              echo "未找到 nr_subpages,正在进行补丁修复"
+              sed -i -e '/int ret = 0, copied = 0;/a \\tunsigned int nr_subpages \= __PAGE_SIZE \/ PAGE_SIZE;' -e '/int ret = 0, copied = 0;/a \\tpagemap_entry_t \*res = NULL;' ./fs/proc/task_mmu.c
+              fake_patched=1
+            fi
+          fi
+          if [ "$GKI_V" = "android12-5.10" ] || [ "$GKI_V" = "android13-5.15" ]; then
+            if ! grep -qxF $'\tif (!vma_pages(vma))' ./fs/proc/task_mmu.c; then
+              echo "未找到 vma_pages,正在进行补丁修复"
+              fake_patched=1
+            fi
+          fi
+
           echo "正在打susfs补丁"
           patch -p1 --forward < 10_enable_susfs_for_ksu.patch  || true
           patch -p1 < 50_add_susfs_in_gki-${{ env.KANDROID_VERSION }}-${{ env.KERNEL_VERSION }}.patch || true
           echo "susfs_patch完成"
 
           patch -p1 --fuzz=3 < scope_min_manual_hooks_v1.5.patch
+
+          # Revert
+          if [ "$fake_patched" = 1 ]; then
+            if [ "$GKI_V" = "android15-6.6" ]; then
+              if grep -qxF $'\tunsigned int nr_subpages = __PAGE_SIZE / PAGE_SIZE;' ./fs/proc/task_mmu.c; then
+                sed -i -e '/unsigned int nr_subpages \= __PAGE_SIZE \/ PAGE_SIZE;/d' -e '/pagemap_entry_t \*res = NULL;/d' ./fs/proc/task_mmu.c
+              fi
+            fi
+            if [ "$GKI_V" = "android12-5.10" ] || [ "$GKI_V" = "android13-5.15" ]; then
+              if grep -qxF $'\t\tgoto show_pad;' ./fs/proc/task_mmu.c; then
+                sed -i -e 's/goto show_pad;/return 0;/' ./fs/proc/task_mmu.c
+              fi
+            fi
+          fi
+
+      - name: Apply Hide Stuff Patches
+        run: |
+          cd kernel_workspace/kernel_platform/common
+          cp ../../SukiSU_patch/69_hide_stuff.patch ./
+          echo "正在打隐藏应用补丁"
+          patch -p1 -F 3 < 69_hide_stuff.patch
+          echo "隐藏应用_patch完成"
 
       # OGKI转换GKI，无需修改 dtbo 开机
       - name: Apply Convert HMBIRD_OGKI to HMBIRD_GKI
@@ -507,7 +563,7 @@ jobs:
           cd kernel_workspace/kernel_platform/common
           echo "正在启用内核级基带保护支持…"
           curl -LSs https://raw.githubusercontent.com/vc-teahouse/Baseband-guard/main/setup.sh | bash
-          sed -i '/^config LSM$/,/^help$/{ /^[[:space:]]*default/ { /baseband_guard/! s/bpf/bpf,baseband_guard/ } }' ./security/Kconfig
+          sed -i '/^config LSM$/,/^help$/{ /^[[:space:]]*default/ { /baseband_guard/! s/lockdown/lockdown,baseband_guard/ } }' ./security/Kconfig
 
       # 配置信息,带*为附加项目,具有一定危险性和不确定性
       - name: Add Configuration Settings
@@ -519,8 +575,9 @@ jobs:
           echo "CONFIG_KSU_KPROBES_HOOK=n" >> "$CONFIG_FILE"
           echo "CONFIG_KSU_SUSFS_SUS_SU=n" >> "$CONFIG_FILE"
           echo "CONFIG_KSU_SUSFS=y" >> "$CONFIG_FILE"
-          echo "CONFIG_KSU_SUSFS_HAS_MAGIC_MOUNT=y" >> "$CONFIG_FILE"
+
           echo "CONFIG_KSU_SUSFS_SUS_PATH=y" >> "$CONFIG_FILE"
+          echo "CONFIG_KSU_SUSFS_SUS_MAP=y" >> "$CONFIG_FILE"
           echo "CONFIG_KSU_SUSFS_SUS_MOUNT=y" >> "$CONFIG_FILE"
           echo "CONFIG_KSU_SUSFS_AUTO_ADD_SUS_KSU_DEFAULT_MOUNT=y" >> "$CONFIG_FILE"
           echo "CONFIG_KSU_SUSFS_AUTO_ADD_SUS_BIND_MOUNT=y" >> "$CONFIG_FILE"
