@@ -1,0 +1,56 @@
+name: 生成补丁文件（从指定 Commit）
+
+on:
+  workflow_dispatch:
+    inputs:
+      REPO_URL:
+        description: "Git 仓库地址"
+        required: true
+        default: "https://github.com/cctv18/android_kernel_oneplus_mt6989.git"
+      COMMIT_HASH:
+        description: "要导出的 Commit 哈希值"
+        required: true
+      PATCH_NAME:
+        description: "输出补丁文件名（必须以 .patch 结尾）"
+        required: true
+        default: "fengchi_scx.patch"
+      REVERSE:
+        description: "是否生成反向补丁？(true/false)"
+        required: true
+        default: "false"
+      CLEAN_HEADER:
+        description: "是否删除补丁中的 commit 头部信息？(true/false)"
+        required: true
+        default: "false"
+
+jobs:
+  gen-patch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: ✅ 克隆仓库
+        run: |
+          git clone ${{ github.event.inputs.REPO_URL }} repo
+          cd repo
+          git fetch --all
+
+      - name: 📌 生成补丁
+        run: |
+          cd repo
+          if [[ "${{ github.event.inputs.REVERSE }}" == "true" ]]; then
+            echo "正在生成反向补丁..."
+            git show -R ${{ github.event.inputs.COMMIT_HASH }} --no-commit-id -p > ../${{ github.event.inputs.PATCH_NAME }}
+          else
+            echo "正在生成正常补丁..."
+            git show ${{ github.event.inputs.COMMIT_HASH }} --no-commit-id -p > ../${{ github.event.inputs.PATCH_NAME }}
+          fi
+
+      - name: 🧹 可选：删除补丁头部 commit 信息
+        if: ${{ github.event.inputs.CLEAN_HEADER == 'true' }}
+        run: |
+          sed -i '/^commit /,/^diff --git /{ /^diff --git /!d }' ${{ github.event.inputs.PATCH_NAME }}
+
+      - name: 📤 上传补丁文件
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ github.event.inputs.PATCH_NAME }}
+          path: ${{ github.event.inputs.PATCH_NAME }}
