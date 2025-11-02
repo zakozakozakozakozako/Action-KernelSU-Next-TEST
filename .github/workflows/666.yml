@@ -11,17 +11,19 @@ on:
         description: "要导出的 Commit 哈希值"
         required: true
       PATCH_NAME:
-        description: "输出补丁文件名（必须以 .patch 结尾）"
+        description: "输出补丁文件名"
         required: true
         default: "fengchi_scx.patch"
       REVERSE:
-        description: "是否生成反向补丁？(true/false)"
+        description: "是否生成反向补丁"
         required: true
-        default: "false"
+        type: boolean
+        default: false
       CLEAN_HEADER:
-        description: "是否删除补丁中的 commit 头部信息？(true/false)"
+        description: "是否删除补丁中的 commit 头部信息"
         required: true
-        default: "false"
+        type: boolean
+        default: true
 
 jobs:
   gen-patch:
@@ -36,7 +38,7 @@ jobs:
       - name: 📌 生成补丁
         run: |
           cd repo
-          if [[ "${{ github.event.inputs.REVERSE }}" == "true" ]]; then
+          if [ "${{ github.event.inputs.REVERSE }}" = true ]; then
             echo "正在生成反向补丁..."
             git show -R ${{ github.event.inputs.COMMIT_HASH }} --no-commit-id -p > ../${{ github.event.inputs.PATCH_NAME }}
           else
@@ -45,7 +47,7 @@ jobs:
           fi
 
       - name: 🧹 可选：删除补丁头部 commit 信息
-        if: ${{ github.event.inputs.CLEAN_HEADER == 'true' }}
+        if: ${{ github.event.inputs.CLEAN_HEADER }}
         run: |
           sed -i '/^commit /,/^diff --git /{ /^diff --git /!d }' ${{ github.event.inputs.PATCH_NAME }}
 
