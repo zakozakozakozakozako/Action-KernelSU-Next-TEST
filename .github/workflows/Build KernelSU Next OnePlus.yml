@@ -30,14 +30,18 @@ on:
           - oneplus_pad2_v
           - oneplus_nord_5
           - oneplus_ace5_pro
+          - oneplus_ace5_pro_w
           - oneplus_13
+          - oneplus_13_w
           - oneplus_13_global
           - oneplus_13t
+          - oneplus_13t_w
           - oneplus_13s
+          - oneplus_13s_w
           - oneplus_pad_2_pro
           - oneplus_pad_3
           - oneplus_ace5_ultra
-          - oneplus_ace6_w
+          - oneplus_ace6
       SUSFS_CI:
         type: choice
         description: "下载SUSFS模块调用方式"
