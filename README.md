@@ -3,14 +3,14 @@
 #### 🌈 ``Stats``
 <picture>
   <source
-    srcset="https://github-readme-stats-one-bice.vercel.app/api?username=Numbersf&include_all_commits=true&count_private=true&role=OWNER,ORGANIZATION_MEMBER,COLLABORATOR&theme=dark"
+    srcset="https://github-readme-stats-one-bice.vercel.app/api?username=Numbersf&include_all_commits=true&count_private=true&theme=dark"
     media="(prefers-color-scheme: dark)"
   />
   <source
-    srcset="https://github-readme-stats-one-bice.vercel.app/api?username=Numbersf&include_all_commits=true&count_private=true&role=OWNER,ORGANIZATION_MEMBER,COLLABORATOR"
+    srcset="https://github-readme-stats-one-bice.vercel.app/api?username=Numbersf&include_all_commits=true&count_private=true"
     media="(prefers-color-scheme: light), (prefers-color-scheme: no-preference)"
   />
-  <img src="https://github-readme-stats-one-bice.vercel.app/api?username=Numbersf&include_all_commits=true&count_private=true&role=OWNER,ORGANIZATION_MEMBER,COLLABORATOR" alt="Numbersf's GitHub stats" />
+  <img src="https://github-readme-stats-one-bice.vercel.app/api?username=Numbersf&include_all_commits=true&count_private=true" alt="Numbersf's GitHub stats" />
 </picture>
  
 #### 🐾 ``Visitors``
