@@ -16,6 +16,7 @@
 #### 🐾 ``Visitors``
 ![](https://count.getloli.com/get/@:Numbersf)
  
+#### 🌌 ``Languages``
 <picture>
   <source
     srcset="https://github-readme-stats.vercel.app/api/top-langs/?username=Numbersf&layout=compact&theme=dark&hide=markdown&langs_count=8"
@@ -28,7 +29,6 @@
   <img src="https://github-readme-stats.vercel.app/api/top-langs/?username=Numbersf&layout=compact&hide=markdown&langs_count=8" alt="Numbersf's top languages" />
 </picture>
  
-#### 🌌 ``Languages``
 <code><img height="20" src="https://raw.githubusercontent.com/github/explore/30f8d4888ebdf18d612e593e15ed9ea4ee000bfc/topics/bash/bash.png" alt="shell" /></code>
 <code><img height="20" src="https://raw.githubusercontent.com/github/explore/30f8d4888ebdf18d612e593e15ed9ea4ee000bfc/topics/kotlin/kotlin.png" alt="kotlin" /></code>
 <code><img height="20" src="https://raw.githubusercontent.com/github/explore/30f8d4888ebdf18d612e593e15ed9ea4ee000bfc/topics/python/python.png" alt="python" /></code>
