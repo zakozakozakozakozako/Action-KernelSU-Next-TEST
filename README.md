@@ -16,8 +16,9 @@ XPosed版本MFGA不参与系统字体覆盖，只针对部分不走系统字体�
 火狐内核浏览器的覆盖暂不支持，等待后续适配
  
 ## 下载
- 在 [Releases](https://github.com/Xposed-Modules-Repo/com.tiktok.unlocker/releases) 下载最新版本。
- 如果你想完成字体完全覆盖，请使用系统模块[MFGA](https://github.com/Numbersf/MakeFontsGreatAgain/releases)
+ 
+在 [Releases](https://github.com/Xposed-Modules-Repo/com.tiktok.unlocker/releases) 下载最新版本。
+如果你想完成字体完全覆盖，请使用系统模块[MFGA](https://github.com/Numbersf/MakeFontsGreatAgain/releases)
   
 ## 使用步骤
   
@@ -27,4 +28,4 @@ XPosed版本MFGA不参与系统字体覆盖，只针对部分不走系统字体�
 ## 支持版本
  
 - Android 1.0+
-- 应用全版本自适配0
+- 应用全版本自适配
