@@ -17,10 +17,10 @@ XPosed版本MFGA不参与系统字体覆盖，只针对部分不走系统字体�
  
 ## 下载与源码
  
-在[Releases](https://github.com/Xposed-Modules-Repo/com.mfga.xposed/releases) 下载最新版本。  
-查看源码[Source](https://github.com/Numbersf/MakeFontsGreatAgain/tree/main/mfga-xposed)  
-如果你想完成字体完全覆盖，请使用系统模块[MFGA](https://github.com/Numbersf/MakeFontsGreatAgain/releases)  
-记得star两个项目谢谢喵
+在 [Releases](https://github.com/Xposed-Modules-Repo/com.mfga.xposed/releases) 下载最新版本  
+查看源码 [Source](https://github.com/Numbersf/MakeFontsGreatAgain/tree/main/mfga-xposed)  
+如果你想完成字体完全覆盖，请使用系统模块 [MFGA](https://github.com/Numbersf/MakeFontsGreatAgain/releases)  
+记得star两个项目谢谢喵  
   
 ## 使用步骤
   
