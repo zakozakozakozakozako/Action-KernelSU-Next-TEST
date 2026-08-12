@@ -1,33 +1,36 @@
+[简体中文](https://github.com/Xposed-Modules-Repo/com.mfga.xposed/README.md) | **`English`**
+<img align="right" src="https://github.com/Xposed-Modules-Repo/com.mfga.xposed/mfga.png" width="100px" alt="mfga">
+
 # MFGA-XPosed
  
-让你走内置字体了吗你就走啊，你很好看吗？给我走系统!  
-XPosed版本MFGA不参与系统字体覆盖，只针对部分不走系统字体的应用让其强制走系统字体，同时保留字重。  
+Let you use the built-in font, huh? Do you think you look that good? Give me the system font!  
+The XPosed version of MFGA does not perform system-wide font overriding. It only targets specific apps that don't follow the system font and forces them to use it, while preserving font weights.  
  
-## 适配范围
+## Scope of Adaptation
  
-- X(com.twitter.android)
-- GitHub(com.github.android)
-- Telegram(org.telegram.messenger)、Nagram(xyz.nextalone.nagram)...
-- TikTok(com.zhiliaoapp.musically)
-- YouTube(com.google.android.youtube)
+- X (com.twitter.android)
+- GitHub (com.github.android)
+- Telegram (org.telegram.messenger), Nagram (xyz.nextalone.nagram)...
+- TikTok (com.zhiliaoapp.musically)
+- YouTube (com.google.android.youtube)
  
-仅此而已嘛？不。  
-理论上你能在``res``里搜索到``inter.xml``的都能适配。很多适配作用域并没有添加进去，需自行测试  
-火狐内核浏览器的覆盖暂不支持，等待后续适配  
+Is that all? No.  
+In theory, any app where you can find ``inter.xml`` by searching within ``res`` can be adapted. Many adaptation scopes have not yet been added and need to be tested manually  
+Overriding on Firefox-engine-based browsers is not yet supported, adaptation is pending  
  
-## 下载与源码
+## Download & Source Code
  
-在 [Releases](https://github.com/Xposed-Modules-Repo/com.mfga.xposed/releases) 下载最新版本  
-查看源码 [Source](https://github.com/Numbersf/MakeFontsGreatAgain/tree/main/mfga-xposed)  
-如果你想完成字体完全覆盖，请使用系统模块 [MFGA](https://github.com/Numbersf/MakeFontsGreatAgain/releases)  
-记得star两个项目谢谢喵  
+Download the latest version from [Releases](https://github.com/Xposed-Modules-Repo/com.mfga.xposed/releases)  
+View the source code [Source](https://github.com/Numbersf/MakeFontsGreatAgain/tree/main/mfga-xposed)  
+If you want to achieve complete font overriding, please use the system module [MFGA](https://github.com/Numbersf/MakeFontsGreatAgain/releases)  
+Remember to star both projects, thanks nya  
   
-## 使用步骤
+## Usage Steps
   
-1. 安装 LSPosed 或 LSPatch
-2. 启用模块并勾选对应应用
+1. Install LSPosed or LSPatch
+2. Enable the module and check the corresponding app
  
-## 支持版本
+## Supported Versions
  
 - Android 1.0+
-- 应用全版本自适配
+- Full version auto-adaptation for apps
